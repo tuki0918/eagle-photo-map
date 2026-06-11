@@ -1,0 +1,18 @@
+{
+  "id": "a957a5d6-8d1b-4a3a-b3c5-477908723a93",
+  "version": "0.1.0",
+  "platform": "all",
+  "arch": "all",
+  "name": "Photo Map",
+  "description": "View GPS-tagged photos on a map.",
+  "logo": "icon.svg",
+  "keywords": ["photo", "map", "gps", "location", "images"],
+  "main": {
+    "url": "index.html",
+    "width": 1440,
+    "height": 1024,
+    "alwaysOnTop": false,
+    "frame": true,
+    "fullscreenable": true
+  }
+}

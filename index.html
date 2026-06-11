@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Photo Map</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIINfQeryslrPHrvtVDQAxh7e4xyuxh7j4A="
+      crossorigin=""
+    />
+    <link rel="stylesheet" href="styles.css?v=20260611-2" />
+  </head>
+  <body>
+    <main class="app-shell" aria-label="Photo Map">
+      <section class="map-surface" id="mapSurface" aria-label="Photo map">
+        <div class="real-map" id="realMap" aria-label="OpenStreetMap"></div>
+        <svg class="route-layer" id="routeLayer" viewBox="0 0 1440 1024" aria-hidden="true">
+          <path id="routePath" class="route-path" d="" />
+        </svg>
+
+        <div class="top-controls">
+          <button class="icon-button is-on" id="markerNumberToggle" type="button" aria-label="Hide map numbers" aria-pressed="true" title="Hide map numbers">
+            <svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M19.914 11.105A7.298 7.298 0 0 0 20 10a8 8 0 0 0-16 0c0 4.993 5.539 10.193 7.399 11.799a1 1 0 0 0 1.202 0 32 32 0 0 0 .824-.738" />
+              <circle cx="12" cy="10" r="3" />
+              <path d="M16 18h6" />
+              <path d="M19 15v6" />
+            </svg>
+          </button>
+          <button class="icon-button route-toggle is-on" id="routeToggle" type="button" aria-label="Toggle route" aria-pressed="true" title="Toggle route">
+            <svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <circle cx="6" cy="19" r="3" />
+              <path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15" />
+              <circle cx="18" cy="5" r="3" />
+            </svg>
+          </button>
+          <button class="icon-button" id="pinViewToggle" type="button" aria-label="Toggle menu visibility" aria-pressed="false" title="Hide menu">
+            <svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M18 8c0 3.613-3.869 7.429-5.393 8.795a1 1 0 0 1-1.214 0C9.87 15.429 6 11.613 6 8a6 6 0 0 1 12 0" />
+              <circle cx="12" cy="8" r="2" />
+              <path d="M8.714 14h-3.71a1 1 0 0 0-.948.683l-2.004 6A1 1 0 0 0 3 22h18a1 1 0 0 0 .948-1.316l-2-6a1 1 0 0 0-.949-.684h-3.712" />
+            </svg>
+          </button>
+        </div>
+
+        <aside class="photo-panel" aria-label="Selected images">
+          <header class="panel-header">
+            <div>
+              <h1>Selected Images</h1>
+              <p id="panelSubtitle">Drop image files here</p>
+            </div>
+            <button class="panel-reset-button" id="resetSelectionButton" type="button" aria-label="Reset images and reload Eagle selection" title="Reset">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M21 12a9 9 0 1 1-2.64-6.36" />
+                <path d="M21 3v6h-6" />
+              </svg>
+            </button>
+          </header>
+          <div class="photo-list" id="photoList"></div>
+          <input id="fileInput" class="file-input" type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png" multiple />
+          <div class="drop-overlay" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false">
+              <path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7z" />
+              <path d="M14 2v5h5" />
+              <circle cx="10" cy="12" r="1.5" />
+              <path d="m8 18 2.5-3 2 2 1.5-1.5 2 2.5" />
+            </svg>
+            <strong class="drop-copy-supported">Drop JPG, JPEG, or PNG files</strong>
+            <strong class="drop-copy-unsupported">Unsupported file extension</strong>
+          </div>
+        </aside>
+
+        <div class="markers" id="markers"></div>
+        <article class="detail-callout" id="detailCallout" aria-label="Selected image details"></article>
+        <aside class="detail-panel" id="detailPanel" aria-label="Selected image details"></aside>
+
+        <div class="map-tools" aria-label="Map controls">
+          <button id="zoomInButton" type="button" aria-label="Zoom in" title="Zoom in">+</button>
+          <button id="zoomOutButton" type="button" aria-label="Zoom out" title="Zoom out">−</button>
+        </div>
+
+        <div class="scale-bar" aria-label="Map scale">
+          <span>0</span>
+          <i></i>
+          <span>250</span>
+          <i></i>
+          <span>500 m</span>
+        </div>
+      </section>
+    </main>
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+    <script src="main.js?v=20260611-2"></script>
+  </body>
+</html>
