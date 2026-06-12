@@ -2,6 +2,8 @@
 
 Photo Map is an Eagle window plugin for viewing GPS-tagged photos on a map.
 
+![](docs/preview.png)
+
 ## Features
 
 - Show selected Eagle images as photo pins on an interactive map.
