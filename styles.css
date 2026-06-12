@@ -1059,6 +1059,23 @@ input {
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
 }
 
+.detail-direction-badge {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 9px;
+  border-radius: 9px;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.58);
+  -webkit-backdrop-filter: blur(10px) saturate(1.2);
+  backdrop-filter: blur(10px) saturate(1.2);
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.2;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+}
+
 .detail-preview-actions {
   position: absolute;
   z-index: 2;

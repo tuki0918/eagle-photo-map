@@ -67,6 +67,13 @@ function formatDateTime(value) {
   return `${date.getFullYear()}/${pad(date.getMonth() + 1)}/${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
+function formatDirection(value) {
+  const direction = Number(value);
+  if (!Number.isFinite(direction)) return "";
+  const normalized = ((direction % 360) + 360) % 360;
+  return `${Math.round(normalized)}°`;
+}
+
 function parseDms(value) {
   if (typeof value === "number") return value;
   if (Array.isArray(value)) {
@@ -136,31 +143,37 @@ function readAscii(view, offset, length) {
   return Array.from({ length }, (_, index) => String.fromCharCode(view.getUint8(offset + index))).join("");
 }
 
-function parseTiffGps(view, tiffStart) {
+function parseTiffMetadata(view, tiffStart) {
   if (tiffStart + 8 > view.byteLength) return null;
   const endian = view.getUint16(tiffStart);
   const littleEndian = endian === 0x4949;
   if (!littleEndian && endian !== 0x4d4d) return null;
   const firstIfdOffset = tiffStart + view.getUint32(tiffStart + 4, littleEndian);
   const firstIfd = readIfd(view, firstIfdOffset, littleEndian, tiffStart);
+  const exifOffset = firstIfd[0x8769];
+  const exif = exifOffset ? readIfd(view, tiffStart + exifOffset, littleEndian, tiffStart) : {};
   const gpsOffset = firstIfd[0x8825];
-  if (!gpsOffset) return null;
-  const gps = readIfd(view, tiffStart + gpsOffset, littleEndian, tiffStart);
+  const gps = gpsOffset ? readIfd(view, tiffStart + gpsOffset, littleEndian, tiffStart) : {};
+  const metadata = {
+    capturedAt: exif[0x9003] || exif[0x9004] || firstIfd[0x0132] || "",
+    direction: parseDms(gps[0x0011]),
+    directionRef: gps[0x0010] || ""
+  };
   const lat = parseDms(gps[0x0002]);
   const lng = parseDms(gps[0x0004]);
-  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
-  const latSign = String(gps[0x0001] || "").toUpperCase() === "S" ? -1 : 1;
-  const lngSign = String(gps[0x0003] || "").toUpperCase() === "W" ? -1 : 1;
-  const altitudeRef = Number(gps[0x0005] || 0);
-  const altitude = parseDms(gps[0x0006]);
-  return {
-    latitude: Math.abs(lat) * latSign,
-    longitude: Math.abs(lng) * lngSign,
-    altitude: Number.isFinite(altitude) ? (altitudeRef === 1 ? -altitude : altitude) : null
-  };
+  if (Number.isFinite(lat) && Number.isFinite(lng)) {
+    const latSign = String(gps[0x0001] || "").toUpperCase() === "S" ? -1 : 1;
+    const lngSign = String(gps[0x0003] || "").toUpperCase() === "W" ? -1 : 1;
+    const altitudeRef = Number(gps[0x0005] || 0);
+    const altitude = parseDms(gps[0x0006]);
+    metadata.latitude = Math.abs(lat) * latSign;
+    metadata.longitude = Math.abs(lng) * lngSign;
+    metadata.altitude = Number.isFinite(altitude) ? (altitudeRef === 1 ? -altitude : altitude) : null;
+  }
+  return metadata;
 }
 
-function parsePngExifGps(view) {
+function parsePngExifMetadata(view) {
   if (view.byteLength < 16) return null;
   const signature = [0x89504e47, 0x0d0a1a0a];
   if (view.getUint32(0) !== signature[0] || view.getUint32(4) !== signature[1]) return null;
@@ -174,18 +187,18 @@ function parsePngExifGps(view) {
       const tiffStart = readAscii(view, dataOffset, 6) === "Exif\u0000\u0000"
         ? dataOffset + 6
         : dataOffset;
-      return parseTiffGps(view, tiffStart);
+      return parseTiffMetadata(view, tiffStart);
     }
     offset = dataOffset + length + 4;
   }
   return null;
 }
 
-function parseExifGps(arrayBuffer) {
+function parseExifMetadata(arrayBuffer) {
   const view = new DataView(arrayBuffer);
   if (view.byteLength < 4) return null;
-  const pngGps = parsePngExifGps(view);
-  if (pngGps) return pngGps;
+  const pngMetadata = parsePngExifMetadata(view);
+  if (pngMetadata) return pngMetadata;
   if (view.getUint16(0) !== 0xffd8) return null;
   let offset = 2;
   while (offset + 4 < view.byteLength) {
@@ -194,7 +207,7 @@ function parseExifGps(arrayBuffer) {
     if (marker === 0xffe1) {
       const signature = readAscii(view, offset + 4, 6);
       if (signature !== "Exif\u0000\u0000") return null;
-      return parseTiffGps(view, offset + 10);
+      return parseTiffMetadata(view, offset + 10);
     }
     offset += 2 + length;
   }
@@ -324,22 +337,24 @@ async function fetchArrayBuffer(source) {
 async function normalizeDroppedFile(file, index) {
   const arrayBuffer = await file.arrayBuffer();
   const imageUrl = URL.createObjectURL(file);
-  let exifGps = null;
+  let exif = null;
   try {
-    exifGps = parseExifGps(arrayBuffer);
+    exif = parseExifMetadata(arrayBuffer);
   } catch (error) {
     console.warn("Dropped image EXIF read failed", error);
   }
   return {
     id: `drop-${Date.now()}-${index}-${file.name}`,
     name: stripFileExtension(file.name) || `Image ${index + 1}`,
-    timestamp: formatDateTime(file.lastModified || ""),
+    timestamp: formatDateTime(exif?.capturedAt || ""),
     annotation: "",
     tags: [],
     isEagleItem: false,
-    latitude: exifGps?.latitude,
-    longitude: exifGps?.longitude,
-    altitude: exifGps?.altitude,
+    latitude: exif?.latitude,
+    longitude: exif?.longitude,
+    altitude: exif?.altitude,
+    direction: exif?.direction,
+    directionRef: exif?.directionRef,
     ...getFallbackPoint(index),
     thumb: imageUrl,
     original: imageUrl
@@ -351,22 +366,24 @@ async function normalizeEagleItem(item, index) {
   if (!source || !isSupportedEagleItem(item, source)) {
     return null;
   }
-  let exifGps = null;
+  let exif = null;
   try {
-    exifGps = parseExifGps(await fetchArrayBuffer(source));
+    exif = parseExifMetadata(await fetchArrayBuffer(source));
   } catch (error) {
     console.warn("Eagle item EXIF read failed", error);
   }
   return {
     id: `eagle-${item.id || source || index}`,
     name: getEagleItemName(item, index),
-    timestamp: formatDateTime(item.modifiedAt || item.createdAt || item.lastModified || item.mtime || ""),
+    timestamp: formatDateTime(exif?.capturedAt || ""),
     annotation: getEagleItemAnnotation(item),
     tags: getEagleItemTags(item),
     isEagleItem: true,
-    latitude: exifGps?.latitude,
-    longitude: exifGps?.longitude,
-    altitude: exifGps?.altitude,
+    latitude: exif?.latitude,
+    longitude: exif?.longitude,
+    altitude: exif?.altitude,
+    direction: exif?.direction,
+    directionRef: exif?.directionRef,
     ...getFallbackPoint(index),
     thumb: sourceToDisplayUrl(getEagleItemThumb(item)),
     original: sourceToDisplayUrl(source),
@@ -1166,12 +1183,17 @@ function renderCallout(photo) {
   const latitudeText = Number.isFinite(photo.latitude) ? photo.latitude.toFixed(6) : "Unknown";
   const longitudeText = Number.isFinite(photo.longitude) ? photo.longitude.toFixed(6) : "Unknown";
   const altitudeText = Number.isFinite(photo.altitude) ? `${photo.altitude.toFixed(2)} m` : "Unknown";
+  const directionText = formatDirection(photo.direction);
   const timeBadge = photo.timestamp
     ? `<span class="detail-time-badge">${escapeHtml(photo.timestamp)}</span>`
+    : "";
+  const directionBadge = directionText
+    ? `<span class="detail-direction-badge" title="Photo direction"><span aria-hidden="true">🧭</span>${escapeHtml(directionText)}</span>`
     : "";
   const previewControls = `
     <div class="detail-preview-actions">
       ${timeBadge}
+      ${directionBadge}
       <button class="preview-button preview-image-button" type="button" aria-label="Preview image" title="Preview image">
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
           <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" />
