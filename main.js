@@ -1188,7 +1188,11 @@ function renderCallout(photo) {
     ? `<span class="detail-time-badge">${escapeHtml(photo.timestamp)}</span>`
     : "";
   const directionBadge = directionText
-    ? `<span class="detail-direction-badge" title="Photo direction"><span aria-hidden="true">🧭</span>${escapeHtml(directionText)}</span>`
+    ? `<span class="detail-direction-badge" data-tooltip="${escapeHtml(directionText)}" aria-label="Photo direction ${escapeHtml(directionText)}">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" style="transform: rotate(${Number(photo.direction)}deg)">
+          <path d="M12 3 4.5 21 12 16.8 19.5 21 12 3Z" />
+        </svg>
+      </span>`
     : "";
   const previewControls = `
     <div class="detail-preview-actions">

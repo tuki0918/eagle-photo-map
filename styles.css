@@ -1060,20 +1060,51 @@ input {
 }
 
 .detail-direction-badge {
+  position: relative;
   flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 6px 9px;
-  border-radius: 9px;
+  justify-content: center;
+  width: 31px;
+  height: 31px;
+  border: 0;
+  border-radius: 50%;
   color: #fff;
   background: rgba(0, 0, 0, 0.58);
   -webkit-backdrop-filter: blur(10px) saturate(1.2);
   backdrop-filter: blur(10px) saturate(1.2);
-  font-size: 13px;
-  font-weight: 650;
-  line-height: 1.2;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+  pointer-events: auto;
+}
+
+.detail-direction-badge svg {
+  width: 18px;
+  height: 18px;
+  fill: #fff;
+  transform-origin: 50% 50%;
+}
+
+.detail-direction-badge::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  padding: 5px 7px;
+  border-radius: 6px;
+  background: rgba(27, 32, 40, 0.92);
+  color: #fff;
+  font-size: 12px;
+  line-height: 1;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 4px);
+  transition: opacity 140ms ease, transform 140ms ease;
+}
+
+.detail-direction-badge:hover::after {
+  opacity: 1;
+  transform: translate(-50%, 0);
 }
 
 .detail-preview-actions {
