@@ -1118,7 +1118,11 @@ function renderLeafletMap(items) {
         iconSize: selected ? [128, 146] : [64, 76],
         iconAnchor: selected ? [64, 144] : [32, 74]
       });
-      const marker = L.marker([photo.latitude, photo.longitude], { icon }).addTo(map);
+      const marker = L.marker([photo.latitude, photo.longitude], {
+        icon,
+        zIndexOffset: selected ? 1000 : 0
+      }).addTo(map);
+      marker.getElement()?.classList.toggle("is-selected-marker", selected);
       marker.on("click", () => selectPhoto(photo.id, { mapMove: "pan" }));
       leafletMarkers.push(marker);
 

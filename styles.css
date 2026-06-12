@@ -837,6 +837,10 @@ input {
   transform: none;
 }
 
+.leaflet-marker-icon.is-selected-marker {
+  z-index: 1000 !important;
+}
+
 .leaflet-photo-marker.is-selected img {
   border-radius: 17px;
 }
